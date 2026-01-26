@@ -2,15 +2,18 @@
 #include <iomanip> 
 #include <string>
 #include <vector>
+#include <windows.h> // PENTING: Library untuk mengatur mode Windows
 
 using namespace std;
 
+// Struktur data untuk menu
 struct MenuItem {
     string nama;
     double harga;
     int stok;
 };
 
+// Struktur data untuk menampung pesanan di keranjang
 struct Pesanan {
     string namaMenu;
     int jumlah;
@@ -30,19 +33,47 @@ void garis() {
     cout << "========================================" << endl;
 }
 
+// --- FUNGSI CETAK QRIS (TAMPILAN KEREN) ---
+void cetakQRIS() {
+    cout << endl;
+    cout << "      SILAKAN SCAN QRIS DI BAWAH      " << endl;
+    cout << " ____________________________________ " << endl;
+    cout << "|                                   |" << endl;
+    cout << "|          AMIKOM SEJAHTERA         |" << endl;
+    cout << "|                                   |" << endl;
+    cout << "|      ███████████████████████      |" << endl;
+    cout << "|      ██ ▄▄▄▄▄ █ ▄ █ ▄▄▄▄▄ ██      |" << endl;
+    cout << "|      ██ █   █ █  ▀█ █   █ ██      |" << endl;
+    cout << "|      ██ █▄▄▄█ █ ▀ █ █▄▄▄█ ██      |" << endl;
+    cout << "|      ██▄▄▄▄▄▄▄█▄█▄█▄▄▄▄▄▄▄██      |" << endl;
+    cout << "|      ██ ▀ ▄ ▀▄▄▀ ▄▀ ▄ ▀ ▄ ██      |" << endl;
+    cout << "|      ██ █ █▀ ▀▀▀▀ ▀▀▀ █ █ ██      |" << endl;
+    cout << "|      ██ ▄▄▄▄▄ █ ▄ █ ▀ ▀ █ ██      |" << endl;
+    cout << "|      ██ █   █ █ ▄▄▀ ▄ ▀ █ ██      |" << endl;
+    cout << "|      ██▄▄▄▄▄▄▄█▄▄▄█▄▄▄▄▄▄▄██      |" << endl;
+    cout << "|                                   |" << endl;
+    cout << "|___________________________________|" << endl;
+    cout << "       NMID: ID1234567890123          " << endl;
+    cout << endl;
+}
+
 int main() {
-    vector<Pesanan> keranjang; // Vector untuk menyimpan item yang dipilih
+    // --- PENTING: MENGATUR TERMINAL AGAR BISA BACA KOTAK (UTF-8) ---
+    system("chcp 65001 > nul");
+
+    vector<Pesanan> keranjang;
     int pilihanMenu, jumlahPesanan;
     char tipeLayanan, metodeBayarChar, tambahLagi;
     string namaLayanan, namaMetodeBayar;
     double totalBelanja = 0, pajak = 0, totalBayar = 0, uangBayar = 0, kembalian = 0;
-
+    
+    // --- PROSES PEMESANAN ---
     do {
         system("cls"); 
         garis();
         cout << "      RESTO AMIKOM SEJAHTERA      " << endl;
         garis();
-
+        
         cout << "No | Nama Menu           | Harga    | Stok" << endl;
         garis();
         for (int i = 0; i < daftarMenu.size(); ++i) {
@@ -66,7 +97,7 @@ int main() {
             continue;
         }
 
-        int idx = pilihanMenu - 1; // Index array
+        int idx = pilihanMenu - 1;
 
         if (daftarMenu[idx].stok <= 0) {
             cout << "Stok habis! Silakan pilih menu lain." << endl;
@@ -90,7 +121,7 @@ int main() {
         }
 
         daftarMenu[idx].stok -= jumlahPesanan;
-
+        
         Pesanan orderBaru;
         orderBaru.namaMenu = daftarMenu[idx].nama;
         orderBaru.jumlah = jumlahPesanan;
@@ -98,11 +129,11 @@ int main() {
         orderBaru.subtotal = daftarMenu[idx].harga * jumlahPesanan;
         
         keranjang.push_back(orderBaru);
-
+        
         totalBelanja += orderBaru.subtotal;
 
         cout << ">> Berhasil menambahkan " << jumlahPesanan << " " << daftarMenu[idx].nama << " ke keranjang." << endl;
-
+        
         cout << "Apakah ingin menambah menu lain? (y/n): ";
         cin >> tambahLagi;
 
@@ -113,6 +144,7 @@ int main() {
         return 0;
     }
 
+    // --- PROSES CHECKOUT ---
     cout << endl;
     garis();
     cout << "Pilih Layanan:" << endl;
@@ -143,19 +175,30 @@ int main() {
     cout << "2. QRIS" << endl;
     cout << "Pilihan: ";
     cin >> metodeBayarChar;
-    namaMetodeBayar = (metodeBayarChar == '1') ? "Tunai" : "QRIS";
 
-    do {
-        cout << "Masukkan uang pembayaran: Rp ";
-        cin >> uangBayar;
+    if (metodeBayarChar == '2') {
+        namaMetodeBayar = "QRIS";
+        // --- MEMANGGIL FUNGSI QRIS ---
+        cetakQRIS(); 
+        
+        cout << "Tekan ENTER jika pembayaran QRIS berhasil...";
+        cin.ignore(); cin.get(); // Menunggu user menekan enter
+        uangBayar = totalBayar; // Asumsikan pas karena digital
+    } else {
+        namaMetodeBayar = "Tunai";
+        do {
+            cout << "Masukkan uang pembayaran: Rp ";
+            cin >> uangBayar;
 
-        if (uangBayar < totalBayar) {
-            cout << "Uang kurang! Kurang Rp " << (size_t)(totalBayar - uangBayar) << endl;
-        }
-    } while (uangBayar < totalBayar);
+            if (uangBayar < totalBayar) {
+                cout << "Uang kurang! Kurang Rp " << (size_t)(totalBayar - uangBayar) << endl;
+            }
+        } while (uangBayar < totalBayar);
+    }
 
     kembalian = uangBayar - totalBayar;
 
+    // --- CETAK STRUK AKHIR ---
     system("cls");
     cout << endl;
     garis();
@@ -164,7 +207,7 @@ int main() {
     garis();
     cout << "Layanan     : " << namaLayanan << endl;
     garis();
-
+    
     cout << "ITEM YANG DIBELI:" << endl;
     for (const auto& item : keranjang) {
         cout << item.namaMenu << endl;
